@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type Mensaje struct {
@@ -42,12 +43,25 @@ func LeerConsola() {
 	log.Print(text)
 }
 
-func GenerarYEnviarPaquete() {
-	paquete := Paquete{}
-	// Leemos y cargamos el paquete
+func LeerConsolaHastaLineaVacia() []string {
+	reader := bufio.NewReader(os.Stdin)
+	var mensajes []string
+	log.Println("Ingrese mensajes (línea vacía para terminar):")
+	for {
+		text, _ := reader.ReadString('\n')
+		text = strings.TrimSpace(text)
+		if text == "" {
+			break
+		}
+		mensajes = append(mensajes, text)
+	}
+	return mensajes
+}
 
-	log.Printf("paqute a enviar: %+v", paquete)
-	// Enviamos el paqute
+func GenerarYEnviarPaquete(mensajes []string) {
+	paquete := Paquete{Valores: mensajes}
+	log.Printf("paquete a enviar: %+v", paquete)
+	EnviarPaquete(globals.ClientConfig.Ip, globals.ClientConfig.Puerto, paquete)
 }
 
 func EnviarMensaje(ip string, puerto int, mensajeTxt string) {
@@ -69,13 +83,13 @@ func EnviarMensaje(ip string, puerto int, mensajeTxt string) {
 func EnviarPaquete(ip string, puerto int, paquete Paquete) {
 	body, err := json.Marshal(paquete)
 	if err != nil {
-		log.Printf("error codificando mensajes: %s", err.Error())
+		log.Printf("error codificando paquete: %s", err.Error())
 	}
 
 	url := fmt.Sprintf("http://%s:%d/paquetes", ip, puerto)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		log.Printf("error enviando mensajes a ip:%s puerto:%d", ip, puerto)
+		log.Printf("error enviando paquete a ip:%s puerto:%d", ip, puerto)
 	}
 
 	log.Printf("respuesta del servidor: %s", resp.Status)
